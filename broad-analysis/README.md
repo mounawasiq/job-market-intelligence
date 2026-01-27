@@ -1,5 +1,4 @@
 # Broad Analysis - Job Market Intelligence
-# Broad Analysis - Job Market Intelligence
 
 ## Overview
 
