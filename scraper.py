@@ -1,326 +1,162 @@
 """
-Job Market Intelligence - Day 3
-Scale scraper to collect 100+ jobs from multiple pages
+Job Market Intelligence - Day 4 (Revised)
+Analyze job titles, companies, and salary trends
 """
 
-import requests
-from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
-import time
-import random
+from collections import Counter
+import re
 
 print("\n" + "="*70)
-print("JOB MARKET INTELLIGENCE - DAY 3: SCALE TO 100+ JOBS")
+print("JOB MARKET INTELLIGENCE - DAY 4: ANALYZE JOB MARKET")
 print("="*70)
 
-# Better headers
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Accept-Encoding': 'gzip, deflate',
-    'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1'
-}
-
-all_jobs = []
-
 # ============================================
-# INDEED - MULTIPLE PAGES
+# LOAD CSV
 # ============================================
 
-def scrape_indeed_multiple_pages():
-    """
-    Scrape Indeed across multiple pages
-    Indeed uses 'start' parameter for pagination: 0, 10, 20, 30...
-    """
-    print("\n[1/3] Scraping Indeed.co.uk (Multiple Pages)...")
-    print("-" * 70)
-    
-    jobs = []
-    base_url = "https://www.indeed.co.uk/jobs?q=data+analyst&l=London&start="
-    
-    # Scrape first 3 pages (30 jobs typically)
-    for page in range(0, 30, 10):  # pages 0, 10, 20
-        url = base_url + str(page)
-        print(f"\nPage {page//10 + 1}: {url}")
-        
-        try:
-            response = requests.get(url, headers=HEADERS, timeout=10)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                job_cards = soup.find_all('div', class_='job_seen_beacon')
-                
-                print(f"  Found {len(job_cards)} jobs on this page")
-                
-                for idx, job_card in enumerate(job_cards):
-                    try:
-                        # Extract title
-                        title_elem = job_card.find('h2', class_='jobTitle')
-                        title = title_elem.text.strip() if title_elem else "N/A"
-                        
-                        # Extract company
-                        company_elem = job_card.find('span', class_='companyName')
-                        company = company_elem.text.strip() if company_elem else "N/A"
-                        
-                        # Extract location
-                        location_elem = job_card.find('div', class_='companyLocation')
-                        location = location_elem.text.strip() if location_elem else "N/A"
-                        
-                        # Extract salary
-                        salary_elem = job_card.find('span', class_='salary-snippet')
-                        salary = salary_elem.text.strip() if salary_elem else "Not listed"
-                        
-                        # Extract job description snippet
-                        desc_elem = job_card.find('ul', class_='jobsearch-JobComponent-description')
-                        description = desc_elem.text.strip()[:200] if desc_elem else "N/A"
-                        
-                        job_data = {
-                            'source': 'Indeed',
-                            'title': title,
-                            'company': company,
-                            'location': location,
-                            'salary': salary,
-                            'description': description,
-                            'date_scraped': datetime.now().strftime("%Y-%m-%d")
-                        }
-                        
-                        jobs.append(job_data)
-                        print(f"    ✓ {title[:50]}...")
-                        
-                    except Exception as e:
-                        continue
-                
-            else:
-                print(f"  ✗ Status {response.status_code}")
-                
-        except Exception as e:
-            print(f"  ✗ Error: {e}")
-        
-        # Be nice to the server - wait between requests
-        time.sleep(random.uniform(2, 4))
-    
-    print(f"\n✓ Indeed: Extracted {len(jobs)} jobs")
-    return jobs
+print("\n[1/5] Loading job data...")
+print("-" * 70)
 
+csv_file = "job_postings_20260127_202057.csv"
+
+try:
+    df = pd.read_csv(csv_file)
+    print(f"✓ Loaded {len(df)} jobs")
+except FileNotFoundError:
+    print(f"✗ File not found: {csv_file}")
+    exit()
 
 # ============================================
-# LINKEDIN - MULTIPLE PAGES
+# ANALYZE JOB TITLES
 # ============================================
 
-def scrape_linkedin_multiple_pages():
-    """
-    Scrape LinkedIn across multiple pages
-    LinkedIn uses 'start' parameter for pagination
-    """
-    print("\n[2/3] Scraping LinkedIn (Multiple Pages)...")
-    print("-" * 70)
-    
-    jobs = []
-    base_url = "https://www.linkedin.com/jobs/search/?keywords=data%20analyst&location=London&start="
-    
-    # Scrape first 2 pages (25 jobs typically)
-    for page in range(0, 25, 25):  # pages 0, 25 (LinkedIn shows 25 per page)
-        url = base_url + str(page)
-        print(f"\nPage {page//25 + 1}: {url}")
-        
-        try:
-            response = requests.get(url, headers=HEADERS, timeout=10)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                job_cards = soup.find_all('div', class_='base-card')
-                
-                print(f"  Found {len(job_cards)} jobs on this page")
-                
-                for idx, job_card in enumerate(job_cards):
-                    try:
-                        # Extract title
-                        title_elem = job_card.find('h3', class_='base-search-card__title')
-                        title = title_elem.text.strip() if title_elem else "N/A"
-                        
-                        # Extract company
-                        company_elem = job_card.find('h4', class_='base-search-card__subtitle')
-                        company = company_elem.text.strip() if company_elem else "N/A"
-                        
-                        # Extract location
-                        location_elem = job_card.find('span', class_='job-search-card__location')
-                        location = location_elem.text.strip() if location_elem else "N/A"
-                        
-                        # LinkedIn rarely shows salary in list view
-                        salary = "Not listed"
-                        description = "N/A"
-                        
-                        job_data = {
-                            'source': 'LinkedIn',
-                            'title': title,
-                            'company': company,
-                            'location': location,
-                            'salary': salary,
-                            'description': description,
-                            'date_scraped': datetime.now().strftime("%Y-%m-%d")
-                        }
-                        
-                        jobs.append(job_data)
-                        print(f"    ✓ {title[:50]}...")
-                        
-                    except Exception as e:
-                        continue
-                
-            else:
-                print(f"  ✗ Status {response.status_code}")
-                
-        except Exception as e:
-            print(f"  ✗ Error: {e}")
-        
-        # Wait between requests
-        time.sleep(random.uniform(2, 4))
-    
-    print(f"\n✓ LinkedIn: Extracted {len(jobs)} jobs")
-    return jobs
+print("\n[2/5] Analyzing job titles...")
+print("-" * 70)
 
+# Extract job level from title
+def get_job_level(title):
+    """Determine seniority level from title"""
+    title_lower = title.lower()
+    if 'senior' in title_lower or 'principal' in title_lower or 'lead' in title_lower:
+        return 'Senior'
+    elif 'junior' in title_lower or 'entry' in title_lower or 'graduate' in title_lower:
+        return 'Junior'
+    elif 'manager' in title_lower or 'head' in title_lower:
+        return 'Management'
+    else:
+        return 'Mid-Level'
+
+df['job_level'] = df['title'].apply(get_job_level)
+
+# Count job levels
+job_levels = df['job_level'].value_counts()
+print(f"\nJob levels found:")
+for level, count in job_levels.items():
+    pct = (count / len(df)) * 100
+    print(f"  {level:15s} - {count:2d} jobs ({pct:5.1f}%)")
 
 # ============================================
-# GLASSDOOR - MULTIPLE PAGES
+# ANALYZE COMPANIES
 # ============================================
 
-def scrape_glassdoor_multiple_pages():
-    """
-    Scrape Glassdoor across multiple pages
-    """
-    print("\n[3/3] Scraping Glassdoor (Multiple Pages)...")
-    print("-" * 70)
-    
-    jobs = []
-    # Glassdoor pagination: add &p=1, &p=2 etc
-    base_url = "https://www.glassdoor.co.uk/Job/data-analyst-jobs-SRCH_KO0,12.htm?location=London&p="
-    
-    # Scrape first 2 pages (30 jobs typically)
-    for page in range(1, 3):  # pages 1, 2
-        url = base_url + str(page)
-        print(f"\nPage {page}: {url}")
-        
-        try:
-            response = requests.get(url, headers=HEADERS, timeout=10)
-            
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                job_cards = soup.find_all('li', class_='react-job-listing')
-                
-                print(f"  Found {len(job_cards)} jobs on this page")
-                
-                for idx, job_card in enumerate(job_cards):
-                    try:
-                        # Extract title
-                        title_elem = job_card.find('a', class_='jobTitle')
-                        title = title_elem.text.strip() if title_elem else "N/A"
-                        
-                        # Extract company
-                        company_elem = job_card.find('div', class_='jobEmpolyerName')
-                        company = company_elem.text.strip() if company_elem else "N/A"
-                        
-                        # Extract location
-                        location_elem = job_card.find('div', class_='jobLocation')
-                        location = location_elem.text.strip() if location_elem else "N/A"
-                        
-                        # Extract salary
-                        salary_elem = job_card.find('span', class_='salaryEstimate')
-                        salary = salary_elem.text.strip() if salary_elem else "Not listed"
-                        
-                        description = "N/A"
-                        
-                        job_data = {
-                            'source': 'Glassdoor',
-                            'title': title,
-                            'company': company,
-                            'location': location,
-                            'salary': salary,
-                            'description': description,
-                            'date_scraped': datetime.now().strftime("%Y-%m-%d")
-                        }
-                        
-                        jobs.append(job_data)
-                        print(f"    ✓ {title[:50]}...")
-                        
-                    except Exception as e:
-                        continue
-                
-            else:
-                print(f"  ✗ Status {response.status_code}")
-                
-        except Exception as e:
-            print(f"  ✗ Error: {e}")
-        
-        # Wait between requests
-        time.sleep(random.uniform(2, 4))
-    
-    print(f"\n✓ Glassdoor: Extracted {len(jobs)} jobs")
-    return jobs
+print("\n[3/5] Analyzing top companies hiring...")
+print("-" * 70)
 
+# Count jobs by company
+company_counts = df['company'].value_counts().head(15)
+print(f"\nTop 15 companies hiring data analysts:")
+for idx, (company, count) in enumerate(company_counts.items(), 1):
+    print(f"  {idx:2d}. {company:30s} - {count:2d} jobs")
 
 # ============================================
-# SAVE TO CSV
+# ANALYZE SALARY DATA
 # ============================================
 
-def save_to_csv(jobs_list, filename=None):
-    """Save jobs to CSV file"""
-    if filename is None:
-        filename = f"job_postings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    
-    try:
-        df = pd.DataFrame(jobs_list)
-        df.to_csv(filename, index=False, encoding='utf-8')
-        
-        print(f"\n✓ Saved {len(df)} jobs to: {filename}")
-        print(f"\nFirst 10 rows of data:")
-        print(df.head(10).to_string())
-        
-        return filename, len(df)
-        
-    except Exception as e:
-        print(f"✗ Error saving to CSV: {e}")
-        return None, 0
+print("\n[4/5] Analyzing salary information...")
+print("-" * 70)
 
+# Extract salary ranges where available
+salaries_available = df[df['salary'] != 'Not listed']
+print(f"\nSalary data available for {len(salaries_available)}/{len(df)} jobs ({len(salaries_available)/len(df)*100:.1f}%)")
 
-# ============================================
-# MAIN EXECUTION
-# ============================================
-
-print("\nStarting multi-page scraping...")
-print(f"Start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-
-# Scrape from all sources
-indeed_jobs = scrape_indeed_multiple_pages()
-time.sleep(2)
-linkedin_jobs = scrape_linkedin_multiple_pages()
-time.sleep(2)
-glassdoor_jobs = scrape_glassdoor_multiple_pages()
-
-# Combine all jobs
-all_jobs = indeed_jobs + linkedin_jobs + glassdoor_jobs
-
-print("\n" + "="*70)
-print("SUMMARY")
-print("="*70)
-print(f"Indeed jobs: {len(indeed_jobs)}")
-print(f"LinkedIn jobs: {len(linkedin_jobs)}")
-print(f"Glassdoor jobs: {len(glassdoor_jobs)}")
-print(f"TOTAL JOBS: {len(all_jobs)}")
-
-# Save to CSV
-if len(all_jobs) > 0:
-    filename, saved_count = save_to_csv(all_jobs)
-    
-    print("\n" + "="*70)
-    print("✓✓✓ SUCCESS! SCALED TO 100+ JOBS ✓✓✓")
-    print("="*70)
-    print(f"\nYou have extracted {saved_count} jobs from 3 sources!")
-    print(f"CSV file: {filename}")
-    print(f"End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    
+if len(salaries_available) > 0:
+    print(f"\nSample salaries found:")
+    for idx in range(min(10, len(salaries_available))):
+        title = salaries_available.iloc[idx]['title']
+        salary = salaries_available.iloc[idx]['salary']
+        print(f"  {title[:40]:40s} - {salary}")
 else:
-    print("\n✗ No jobs found to save")
+    print("  (No salary data in this dataset)")
+
+# ============================================
+# ANALYZE JOB SOURCES
+# ============================================
+
+print("\n[5/5] Analyzing data sources...")
+print("-" * 70)
+
+source_counts = df['source'].value_counts()
+print(f"\nJobs by source:")
+for source, count in source_counts.items():
+    pct = (count / len(df)) * 100
+    bar = "█" * int(count/2)
+    print(f"  {source:15s} - {count:2d} jobs ({pct:5.1f}%) {bar}")
+
+# ============================================
+# SAVE ANALYSIS
+# ============================================
 
 print("\n" + "="*70)
+print("SAVING ANALYSIS RESULTS")
+print("="*70)
+
+# Save with job level added
+analysis_filename = f"jobs_analyzed_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+df.to_csv(analysis_filename, index=False)
+print(f"\n✓ Saved analyzed data to: {analysis_filename}")
+
+# ============================================
+# FINAL INSIGHTS
+# ============================================
+
+print("\n" + "="*70)
+print("✓✓✓ KEY INSIGHTS FROM DATA ANALYST JOB MARKET ✓✓✓")
+print("="*70)
+
+print(f"\n📊 1. JOB MARKET OVERVIEW:")
+print(f"   Total jobs analyzed: {len(df)}")
+print(f"   Data sources: {len(source_counts)} (Indeed, LinkedIn, Glassdoor)")
+print(f"   Companies hiring: {df['company'].nunique()}")
+
+print(f"\n💼 2. SENIORITY DISTRIBUTION:")
+top_level = job_levels.index[0]
+top_level_count = job_levels.iloc[0]
+print(f"   Most common: {top_level} ({top_level_count} jobs, {top_level_count/len(df)*100:.1f}%)")
+print(f"   This means: {['Most jobs are mid-level positions', 'Most jobs are entry-level', 'Most jobs are senior positions', 'Most jobs are management'][['Mid-Level', 'Junior', 'Senior', 'Management'].index(top_level)]}")
+
+print(f"\n🏢 3. HIRING HOTSPOTS:")
+print(f"   Top hiring company: {company_counts.index[0]} ({company_counts.iloc[0]} jobs)")
+print(f"   Market concentration: Top 5 companies have {company_counts.head(5).sum()}/{len(df)} jobs ({company_counts.head(5).sum()/len(df)*100:.1f}%)")
+
+print(f"\n💰 4. SALARY DATA:")
+if len(salaries_available) > 0:
+    print(f"   {len(salaries_available)}/{len(df)} jobs list salary information")
+    print(f"   (Data sites vary in salary transparency)")
+else:
+    print(f"   Limited salary data in this dataset")
+
+print(f"\n🌐 5. MARKET DISTRIBUTION:")
+for source, count in source_counts.items():
+    pct = (count / len(df)) * 100
+    print(f"   {source:15s}: {count:2d} jobs ({pct:5.1f}%)")
+
+print(f"\n✅ 6. NEXT STEPS:")
+print(f"   → Day 5: Create visualizations of these insights")
+print(f"   → Generate charts showing job levels, companies, salary ranges")
+print(f"   → Build portfolio narrative: 'What data analysts need'")
+
+print("\n" + "="*70)
+print(f"✓ Analysis complete!")
+print("="*70 + "\n")
