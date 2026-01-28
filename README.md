@@ -42,7 +42,6 @@ job-market-intelligence/
 │
 ├── broad-analysis/
 │   ├── scraper.py                          # Web scraper (3 platforms)
-│   ├── day4_analysis.py                    # Data analysis
 │   ├── day5_visualizations.py              # Chart generation
 │   ├── job_postings_*.csv                  # Raw job data (60 jobs)
 │   ├── jobs_analyzed_*.csv                 # Analyzed data
