@@ -1,5 +1,3 @@
-# job-market-intelligence
-Web scraping job postings and analyzing skill demand using NLP
 # Job Market Intelligence
 
 **Web scraping job postings and analyzing skill demand using NLP**
@@ -151,10 +149,7 @@ pip install requests beautifulsoup4 pandas matplotlib seaborn
 # Step 1: Scrape data
 python broad-analysis/scraper.py
 
-# Step 2: Analyze data
-python broad-analysis/day4_analysis.py
-
-# Step 3: Create visualizations
+# Step 2: Create visualizations and analysis
 python broad-analysis/day5_visualizations.py
 ```
 
