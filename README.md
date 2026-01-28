@@ -219,14 +219,16 @@ python broad-analysis/day5_visualizations.py
 
 ## 🎓 Learning Outcomes
 
+🎓 Learning Outcomes
 By completing this project, I demonstrated:
-- ✓ Web scraping from real websites
-- ✓ Handling multiple data sources
-- ✓ Cleaning and analyzing raw data
-- ✓ Creating professional visualizations
-- ✓ Documenting findings clearly
-- ✓ Version control with Git
-- ✓ Problem-solving (adapting when sites block scrapers)
+
+✓ Web scraping from real websites
+✓ Handling multiple data sources
+✓ Cleaning and analyzing raw data
+✓ Creating professional visualizations
+✓ Documenting findings clearly
+✓ Version control with Git
+✓ Problem-solving (adapting when sites block scrapers)
 
 ---
 
