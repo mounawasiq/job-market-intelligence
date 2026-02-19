@@ -1,6 +1,6 @@
 # Job Market Intelligence
 
-**Web scraping job postings and analyzing skill demand using NLP**
+**Web scraping job postings and analyzing skill demand
 
 A comprehensive data analysis project examining the UK data analyst job market across multiple platforms. This portfolio demonstrates web scraping, data analysis, visualization, and market research skills.
 
