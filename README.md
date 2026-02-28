@@ -238,18 +238,6 @@ By completing this project, I demonstrated:
 
 ---
 
-## 🔗 Related Portfolio Projects
-
-This is Project 1 of a 5-project data analyst portfolio:
-
-1. **Job Market Intelligence** (✓ COMPLETE)
-2. Charity Impact Analysis (Week 3)
-3. Property Price Forecasting (Week 6)
-4. University ROI Analysis (Week 9-10)
-5. Streaming Wars Full-Stack App (Week 11-12)
-
----
-
 ## 👤 Author
 Mounawasiq
 
